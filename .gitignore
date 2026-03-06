@@ -1,0 +1,18 @@
+# Ambientes Virtuais
+venv/
+__pycache__/
+*.pyc
+
+# Arquivos de Credenciais e Variáveis Locais (MUITO IMPORTANTE)
+.env
+chaveGoogle.json
+
+# Pastas de Processamento (Ignora os arquivos, mas mantém as pastas)
+temp/*
+!temp/.gitkeep
+final/*
+!final/.gitkeep
+
+# Arquivos do Sistema Operacional
+.DS_Store
+Thumbs.db

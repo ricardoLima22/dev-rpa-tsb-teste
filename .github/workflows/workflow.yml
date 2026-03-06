@@ -1,0 +1,44 @@
+name: Robô TSB
+
+on:
+  workflow_dispatch: #Permite rodar manualmente clicando num botão no GitHub
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest # Usa Windows para manter o padrão das suas pastas
+
+    steps:
+      - name: 📥 Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Instalar bibliotecas
+        run: pip install -r requirements.txt
+
+      - name: 🚀 Executar o Robô
+        env:
+          GITHUB_ACTIONS: "true"
+          PYTHONIOENCODING: "utf-8"
+          PYTHONUNBUFFERED: "1"
+          # Lendo das Variables
+          ID_PLANILHA_GSHEET: ${{ vars.ID_PLANILHA_GSHEET }}
+          ID_PLANILHA_ATT_GSHEET: ${{ vars.ID_PLANILHA_ATT_GSHEET }}
+          ID_PASTA_DRIVE_FINAL: ${{ vars.ID_PASTA_DRIVE_FINAL }}
+          # Lendo das Secrets
+          TOKEN_ZUQ: ${{ vars.TOKEN_ZUQ }}
+          LOGIN_GPM: ${{ vars.LOGIN_GPM }}
+          SENHA_GPM: ${{ vars.SENHA_GPM }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: python main.py
+
+      - name: 💾 Salvar config.json atualizado
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add config.json
+          git commit -m "🤖 Atualizando data de execução via nuvem [skip ci]" || echo "Nenhuma mudança de data"
+          git push
