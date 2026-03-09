@@ -161,11 +161,21 @@ class Chrome:
         self._click('/html/body/form[5]/div/input')
         
         print("- Aguardando carregamento da tabela de resultados...")
-        sleep(15) # Aumentado para dar tempo de carregar as colunas no navegador
+        sleep(10)
+        
+        # FORÇAR SCROLL NA TABELA: Acorda os dados em modo Headless
+        print("- Forçando scroll para carregar dados (Lazy Loading)...")
+        try:
+            self.navegador.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            sleep(2)
+            self.navegador.execute_script("window.scrollTo(0, 0);")
+            sleep(3)
+        except:
+            pass
         
         self._click('//*[@id="tab_resultados_wrapper"]/div[1]/button[4]')
         print("- Clique no botão de exportação realizado.")
-        sleep(12)
+        sleep(15)
 
         self._fechar_chrome()
 

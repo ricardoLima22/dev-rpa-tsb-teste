@@ -74,19 +74,24 @@ def process_file(file_path, operacao):
     
     # 5. Criar a nova coluna 'data' com FALLBACK (tenta várias colunas do GPM se dta_inicio falhar)
     print("--- [DEBUG] Verificando colunas de data disponíveis...")
-    colunas_data_possiveis = ['dta_inicio', 'Dta_inicio de desloc', 'Dta_inicio do inicio']
+    colunas_data_possiveis = [
+        'dta_inicio'#, 
+        #'Dta_inicio de deslocamento primeiro serv', 
+        #'Dta_inicio do inicio do reparo primeiro serv'
+    ]
     coluna_selecionada = None
     
     for col in colunas_data_possiveis:
         if col in df.columns:
-            # Verifica se pelo menos 1 linha tem dado nessa coluna
-            if df[col].dropna().any():
+            # Verifica se pelo menos 1 linha tem dado nessa coluna (não nulo e não apenas espaços)
+            col_data = df[col].dropna()
+            if not col_data.empty and col_data.astype(str).str.strip().ne('').any():
                 coluna_selecionada = col
-                print(f"--- [DEBUG] Coluna de data vinda com dados: '{col}'")
+                print(f"--- [DEBUG] Coluna de data encontrada com dados reais: '{col}'")
                 break
     
     if not coluna_selecionada:
-        print("--- [DEBUG] AVISO: Nenhuma coluna de data contém dados! Usando 'dta_inicio' como padrão.")
+        print("--- [DEBUG] AVISO CRÍTICO: Nenhuma coluna de data contém dados! Tentando usar 'dta_inicio' mesmo assim.")
         coluna_selecionada = 'dta_inicio'
     
     df['data'] = pd.to_datetime(df[coluna_selecionada], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
