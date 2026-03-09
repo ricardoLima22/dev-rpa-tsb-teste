@@ -69,8 +69,27 @@ def process_file(file_path, operacao):
     # 4. Renomear a coluna 'cod_turno_tur' para 'id'
     df.rename(columns={'num_contrato': 'contrato'}, inplace=True)
 
-    # 5. Criar a nova coluna 'data' a partir da coluna 'dta_inicio'
-    df['data'] = pd.to_datetime(df['dta_inicio'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
+    # 4. Limpar nomes de colunas (remover espaços invisíveis)
+    df.columns = df.columns.str.strip()
+    
+    # 5. Criar a nova coluna 'data' com FALLBACK (tenta várias colunas do GPM se dta_inicio falhar)
+    print("--- [DEBUG] Verificando colunas de data disponíveis...")
+    colunas_data_possiveis = ['dta_inicio', 'Dta_inicio de desloc', 'Dta_inicio do inicio']
+    coluna_selecionada = None
+    
+    for col in colunas_data_possiveis:
+        if col in df.columns:
+            # Verifica se pelo menos 1 linha tem dado nessa coluna
+            if df[col].dropna().any():
+                coluna_selecionada = col
+                print(f"--- [DEBUG] Coluna de data vinda com dados: '{col}'")
+                break
+    
+    if not coluna_selecionada:
+        print("--- [DEBUG] AVISO: Nenhuma coluna de data contém dados! Usando 'dta_inicio' como padrão.")
+        coluna_selecionada = 'dta_inicio'
+    
+    df['data'] = pd.to_datetime(df[coluna_selecionada], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
     
     # SELECT APENAS NAS DATAS - DEBUG SOLICITADO
     print(f"\n--- [DEBUG SELECT] Datas processadas em 'process_file' ({operacao}):")

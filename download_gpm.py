@@ -152,12 +152,20 @@ class Chrome:
         self._logar_gpm(login_gpm, senha_gpm)
         self._navegar(consulta_url)
         
-        self._send_Keys('//*[@id="data_inicial"]', self.getDate())
-        self._send_Keys('//*[@id="data_final"]', self.getDate())
+        # INJEÇÃO VIA JAVASCRIPT: Mais confiável para campos com máscara
+        data_str = self.getDate()
+        print(f"- Injetando datas via JS: {data_str}")
+        self.navegador.execute_script(f"document.getElementById('data_inicial').value = '{data_str}';")
+        self.navegador.execute_script(f"document.getElementById('data_final').value = '{data_str}';")
+        
         self._click('/html/body/form[5]/div/input')
-        sleep(10)    
+        
+        print("- Aguardando carregamento da tabela de resultados...")
+        sleep(15) # Aumentado para dar tempo de carregar as colunas no navegador
+        
         self._click('//*[@id="tab_resultados_wrapper"]/div[1]/button[4]')
-        sleep(10)
+        print("- Clique no botão de exportação realizado.")
+        sleep(12)
 
         self._fechar_chrome()
 
