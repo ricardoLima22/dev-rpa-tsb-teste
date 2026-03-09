@@ -161,14 +161,18 @@ class Chrome:
         
         if operacao == 'BA':
             consulta_url = 'https://sirtecba.gpm.srv.br/gpm/geral/consulta_turno.php'
-            login_gpm = os.getenv('LOGIN_GPM_BA')
-            senha_gpm = os.getenv('PASSWORD_GPM_BA')
+            login_gpm = os.getenv('LOGIN_GPM_BA') or os.getenv('LOGIN_GPM')
+            senha_gpm = os.getenv('PASSWORD_GPM_BA') or os.getenv('SENHA_GPM_BA') or os.getenv('SENHA_GPM')
         elif operacao == 'CE':
             consulta_url = 'https://sirtecce.gpm.srv.br/gpm/geral/consulta_turno.php'
-            login_gpm = os.getenv('LOGIN_GPM_CE')
-            senha_gpm = os.getenv('PASSWORD_GPM_CE')
+            login_gpm = os.getenv('LOGIN_GPM_CE') or os.getenv('LOGIN_GPM')
+            senha_gpm = os.getenv('PASSWORD_GPM_CE') or os.getenv('SENHA_GPM_CE') or os.getenv('SENHA_GPM')
         else:
             print(f"# Operação {operacao} não reconhecida.")
+            return
+
+        if not login_gpm or not senha_gpm:
+            print(f"# ERRO: Credenciais de login GPM não encontradas para {operacao}. Verifique os Secrets/Ambiente.")
             return
 
         self._processar_download(consulta_url, login_gpm, senha_gpm, operacao)
