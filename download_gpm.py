@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import os
+import time
 import zipfile
 from selenium import webdriver
 from selenium.webdriver.common.by import By
