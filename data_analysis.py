@@ -13,10 +13,20 @@ column_index = 3
 def process_file(file_path, operacao):
     # 2. Carregar o arquivo CSV em um DataFrame com especificação do separador
     try:
+        # VERIFICAÇÃO DE CONTEÚDO BRUTO PARA O GITHUB ACTIONS
+        print(f"\n{l}--- [DEBUG] INSPECIONANDO ARQUIVO BRUTO: {os.path.basename(file_path)} ---")
+        try:
+            with open(file_path, 'r', encoding='utf-8-sig') as f:
+                print(f"CONTEÚDO BRUTO (Primeiras 3 linhas):\n{f.readline()}{f.readline()}{f.readline()}")
+        except:
+            print("Não foi possível ler o conteúdo bruto do arquivo.")
+
         df = pd.read_csv(file_path, sep=';', encoding='utf-8-sig')  # Especificando o separador e encoding
-        print(f"--- [DEBUG] Lendo arquivo: {os.path.basename(file_path)}")
-        print(f"--- [DEBUG] Colunas identificadas: {df.columns.tolist()}")
-        print(f"--- [DEBUG] Primeiras linhas:\n{df.head(2).to_string()}")
+        print(f"--- [DEBUG] Colunas no CSV original: {df.columns.tolist()}")
+        if 'dta_inicio' in df.columns:
+            print(f"--- [DEBUG] Rastreio 'dta_inicio' (Original):\n{df['dta_inicio'].head(5)}")
+        else:
+            print("--- [DEBUG] AVISO: Coluna 'dta_inicio' NÃO FOI ENCONTRADA no CSV original.")
     except Exception as e:
         print(f"# Erro ao ler o arquivo {file_path}: {e}")
         return None
@@ -61,6 +71,7 @@ def process_file(file_path, operacao):
 
     # 5. Criar a nova coluna 'data' a partir da coluna 'dta_inicio'
     df['data'] = pd.to_datetime(df['dta_inicio'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
+    print(f"--- [DEBUG] Rastreio coluna 'data' (Processada):\n{df['data'].head(5)}")
 
     # 6. Adicionar a coluna 'operacao'
     df['operacao'] = operacao
@@ -173,7 +184,8 @@ def process_consulta_turno_files(path_temp, pontomais_df, operacao):
 
             # Criar a coluna 'date_hour_pontomais' que é a concatenação das colunas 'Data' e 'hora_pontomais'
             consulta_turno_df['date_hour_pontomais'] = consulta_turno_df['data'].astype(str) + ' ' + consulta_turno_df['hora_pontomais'].astype(str)
-
+            print(f"--- [DEBUG] Rastreio final ({operacao}) - Coluna 'date_hour_pontomais':\n{consulta_turno_df['date_hour_pontomais'].head(10)}")
+            print(consulta_turno_df)
             # Salvar o arquivo "consulta turno" com as novas colunas, sobrescrevendo o conteúdo original
             consulta_turno_df.to_csv(file_path, sep=';', index=False, encoding='utf-8-sig')
             print(f"- Arquivo processado e salvo: {file_path}\n")

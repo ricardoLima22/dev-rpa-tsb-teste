@@ -67,6 +67,7 @@ class Chrome:
     def _send_Keys(self, X_PATH, key):
         # Espera o campo estar visível e pronto para receber texto
         elemento = WebDriverWait(self.navegador, 360).until(EC.visibility_of_element_located((By.XPATH, X_PATH)))
+        elemento.clear() # LIMPA O CAMPO ANTES DE DIGITAR
         elemento.send_keys(key)
         sleep(0.3)
 
