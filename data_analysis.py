@@ -71,7 +71,11 @@ def process_file(file_path, operacao):
 
     # 5. Criar a nova coluna 'data' a partir da coluna 'dta_inicio'
     df['data'] = pd.to_datetime(df['dta_inicio'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-    print(f"--- [DEBUG] Rastreio coluna 'data' (Processada):\n{df['data'].head(5)}")
+    
+    # SELECT APENAS NAS DATAS - DEBUG SOLICITADO
+    print(f"\n--- [DEBUG SELECT] Datas processadas em 'process_file' ({operacao}):")
+    print(df[['dta_inicio', 'data']].head(10).to_string())
+    print("-" * 50)
 
     # 6. Adicionar a coluna 'operacao'
     df['operacao'] = operacao
@@ -184,8 +188,11 @@ def process_consulta_turno_files(path_temp, pontomais_df, operacao):
 
             # Criar a coluna 'date_hour_pontomais' que é a concatenação das colunas 'Data' e 'hora_pontomais'
             consulta_turno_df['date_hour_pontomais'] = consulta_turno_df['data'].astype(str) + ' ' + consulta_turno_df['hora_pontomais'].astype(str)
-            print(f"--- [DEBUG] Rastreio final ({operacao}) - Coluna 'date_hour_pontomais':\n{consulta_turno_df['date_hour_pontomais'].head(10)}")
-            print(consulta_turno_df)
+            
+            # SELECT APENAS NAS DATAS - DEBUG SOLICITADO
+            print(f"\n--- [DEBUG SELECT] Datas finais em 'process_consulta_turno_files' ({operacao}):")
+            print(consulta_turno_df[['data', 'hora_pontomais', 'date_hour_pontomais']].head(10).to_string())
+            print("-" * 50)
             # Salvar o arquivo "consulta turno" com as novas colunas, sobrescrevendo o conteúdo original
             consulta_turno_df.to_csv(file_path, sep=';', index=False, encoding='utf-8-sig')
             print(f"- Arquivo processado e salvo: {file_path}\n")
