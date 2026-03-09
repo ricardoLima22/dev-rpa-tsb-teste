@@ -332,24 +332,41 @@ class Chrome:
         backup_file = f"SCRAPED_BACKUP_{operacao}.csv"
         backup_path = os.path.join(path_downloads, backup_file)
         if os.path.exists(backup_path):
+            os.makedirs(path_temp, exist_ok=True)
             new_path = os.path.join(path_temp, f"consulta turno {operacao}.csv")
             # Só usa o scraping se o original não existir ou estiver quase vazio
             if not os.path.exists(new_path) or os.path.getsize(new_path) < 500:
-                shutil.move(backup_path, new_path)
-                print(f"- [ROBUSTEZ] Usando dados capturados via SCRAPING direto da tela para '{operacao}'.")
+                if os.path.exists(backup_path):
+                    shutil.move(backup_path, new_path)
+                    print(f"- [ROBUSTEZ] Usando dados capturados via SCRAPING direto da tela para '{operacao}'.")
             else:
                 if os.path.exists(backup_path): os.remove(backup_path)
 
 
 ##### outros ###             
     def limpar_pasta_temp(self):
-        if os.path.exists(path_temp):
-            for temp_file in os.listdir(path_temp):
-                temp_file_path = os.path.join(path_temp, temp_file)
-                try:
-                    if os.path.isfile(temp_file_path) or os.path.islink(temp_file_path):
-                        os.unlink(temp_file_path)
-                    elif os.path.isdir(temp_file_path):
-                        shutil.rmtree(temp_file_path)
-                except Exception as e:
-                    print(f"# Falha ao deletar {temp_file_path}. Razão: {e}\n")
+        # GARANTE QUE A PASTA TEMP EXISTE (Crucial para o GitHub Actions)
+        if not os.path.exists(path_temp):
+            os.makedirs(path_temp, exist_ok=True)
+            print(f"- Pasta temp criada em: {path_temp}")
+
+        for temp_file in os.listdir(path_temp):
+            temp_file_path = os.path.join(path_temp, temp_file)
+            try:
+                if os.path.isfile(temp_file_path) or os.path.islink(temp_file_path):
+                    os.unlink(temp_file_path)
+                elif os.path.isdir(temp_file_path):
+                    shutil.rmtree(temp_file_path)
+            except Exception as e:
+                print(f"# Falha ao deletar {temp_file_path}. Razão: {e}\n")
+
+    def limpar_downloads_inicial(self):
+        """Limpa arquivos CSV e ZIP da pasta de downloads antes de começar."""
+        if os.path.exists(path_downloads):
+            print(f"- Limpando arquivos residuais em: {path_downloads}")
+            for f in os.listdir(path_downloads):
+                if f.endswith('.csv') or f.endswith('.zip'):
+                    try:
+                        os.remove(os.path.join(path_downloads, f))
+                    except:
+                        pass

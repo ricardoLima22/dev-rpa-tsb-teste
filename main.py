@@ -35,6 +35,7 @@ def main():
             
             # Remover arquivos antigos
             chrome.limpar_pasta_temp()
+            chrome.limpar_downloads_inicial()
             
             # Fazer download dos arquivos do GPM
 
