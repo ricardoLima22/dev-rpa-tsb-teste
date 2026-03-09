@@ -22,6 +22,10 @@ class Chrome:
             self.options.add_argument('--headless=new')
             self.options.add_argument('--lang=pt-BR')
         
+        # User-Agent Spoofing: Simula um navegador Windows real para evitar bloqueios de robô
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        self.options.add_argument(f"user-agent={user_agent}")
+        
         # self.options.add_argument('--headless') # janela oculta
         self.options.add_argument('--window-size=1920,1080')
         self.options.add_argument('--disable-gpu')
@@ -195,6 +199,23 @@ class Chrome:
             print("- Processamento concluído!")
         except:
             print("- Timeout aguardando overlay de processamento.")
+            
+        # INSPEÇÃO VISUAL DA TABELA (DIAGNÓSTICO): Verifica se os dados existem na tela
+        print("- [DIAGNÓSTICO] Inspecionando dados na tabela visível do navegador...")
+        try:
+            # Pega o texto da primeira linha de dados na tabela (tr[1] dentro do tbody)
+            linha_dados = self.navegador.find_element(By.XPATH, '//*[@id="tab_resultados"]/tbody/tr[1]')
+            texto_linha = linha_dados.text.strip()
+            if texto_linha:
+                print(f"- [DEBUG VISUAL] Dados encontrados na 1ª linha da tela: {texto_linha[:150]}...")
+                if data_str in texto_linha:
+                    print("- [DEBUG VISUAL] Sucesso: A data digitada foi encontrada na tabela da tela!")
+                else:
+                    print("- [DEBUG VISUAL] Alerta: A data digitada NÃO foi encontrada na 1ª linha da tabela.")
+            else:
+                print("- [DEBUG VISUAL] Alerta: A 1ª linha da tabela na tela está VAZIA.")
+        except Exception as e:
+            print(f"- [DEBUG VISUAL] Não foi possível ler a tabela na tela: {e}")
         
         # Scroll para garantir que o site carregue todas as colunas (Lazy Loading)
         self.navegador.execute_script("window.scrollTo(0, document.body.scrollHeight);")
