@@ -152,26 +152,52 @@ class Chrome:
         self._logar_gpm(login_gpm, senha_gpm)
         self._navegar(consulta_url)
         
-        # INJEÇÃO VIA JAVASCRIPT: Mais confiável para campos com máscara
+        # INJEÇÃO VIA JAVASCRIPT: Mais confiável para campos com máscara e modo Headless
         data_str = self.getDate()
-        print(f"- Injetando datas via JS: {data_str}")
-        self.navegador.execute_script(f"document.getElementById('data_inicial').value = '{data_str}';")
-        self.navegador.execute_script(f"document.getElementById('data_final').value = '{data_str}';")
+        print(f"- Injetando datas via JS e disparando eventos: {data_str}")
+        
+        script_injecao = f"""
+            var campos = ['data_inicial', 'data_final'];
+            campos.forEach(function(id) {{
+                var el = document.getElementById(id);
+                el.value = '{data_str}';
+                el.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                el.dispatchEvent(new Event('blur', {{ bubbles: true }}));
+            }});
+        """
+        self.navegador.execute_script(script_injecao)
         
         self._click('/html/body/form[5]/div/input')
         
-        print("- Aguardando carregamento da tabela de resultados...")
-        sleep(10)
+        print("- Aguardando carregamento dos dados na tabela...")
+        # Espera dinâmica: Só prossegue se encontrar uma célula com data na tabela
+        timeout = 30
+        start_time = time.time()
+        dados_carregados = False
         
-        # FORÇAR SCROLL NA TABELA: Acorda os dados em modo Headless
-        print("- Forçando scroll para carregar dados (Lazy Loading)...")
-        try:
-            self.navegador.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        while time.time() - start_time < timeout:
+            try:
+                # Procura por qualquer texto que pareça uma data (dd/mm/aaaa) dentro da tabela de resultados
+                celulas = self.navegador.find_elements(By.XPATH, '//*[@id="tab_resultados"]//td')
+                for celula in celulas:
+                    if len(celula.text.strip()) >= 10: # Ex: 01/01/2024
+                        dados_carregados = True
+                        break
+                if dados_carregados:
+                    print("- Dados detectados na tabela!")
+                    break
+            except:
+                pass
             sleep(2)
-            self.navegador.execute_script("window.scrollTo(0, 0);")
-            sleep(3)
-        except:
-            pass
+        
+        if not dados_carregados:
+            print("# AVISO: Tempo limite de espera por dados atingido. Tentando exportar assim mesmo.")
+        
+        # Scroll para garantir que o site carregue todas as colunas (Lazy Loading)
+        self.navegador.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        sleep(2)
+        self.navegador.execute_script("window.scrollTo(0, 0);")
+        sleep(2)
         
         self._click('//*[@id="tab_resultados_wrapper"]/div[1]/button[4]')
         print("- Clique no botão de exportação realizado.")
