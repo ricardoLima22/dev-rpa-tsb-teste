@@ -180,6 +180,17 @@ class Chrome:
         self._logar_gpm(login_gpm, senha_gpm)
         self._navegar(consulta_url)
         
+        # AGUARDA O CARREGAMENTO DOS FILTROS (Novo)
+        print("- Aguardando campos de filtro ficarem prontos...")
+        try:
+            WebDriverWait(self.navegador, 30).until(
+                EC.presence_of_element_located((By.ID, "data_inicial"))
+            )
+        except Exception as e:
+            print(f"# ERRO: Campos de data não carregaram na página de consulta: {e}")
+            # Se não carregou o filtro, não adianta continuar
+            return
+
         # DIGITAÇÃO HUMANA: Evita bloqueios de locale e aciona gatilhos do GPM
         data_str = self.getDate()
         print(f"- Simulando digitação humana das datas: {data_str}")
