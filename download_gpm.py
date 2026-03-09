@@ -20,6 +20,7 @@ class Chrome:
 
         if 'GITHUB_ACTIONS' in os.environ:
             self.options.add_argument('--headless=new')
+            self.options.add_argument('--lang=pt-BR')
         
         # self.options.add_argument('--headless') # janela oculta
         self.options.add_argument('--window-size=1920,1080')
@@ -27,17 +28,19 @@ class Chrome:
         self.options.add_argument('--no-sandbox')
         self.options.add_argument('--disable-dev-shm-usage')
         self.options.add_argument('--force-device-scale-factor=0.67') # Zoom
+        self.options.add_argument("--disable-features=InsecureDownloadWarnings")
+        self.options.add_argument("--allow-running-insecure-content")
         
-        # Desabilita o carregamento de imagens para acelerar
-        self.options.add_experimental_option('prefs', {'profile.managed_default_content_settings.images': 2})
-        
-        # Define o diretório de download para a pasta temp do projeto
-        self.options.add_experimental_option('prefs', {
+        # Define as preferências do Chrome
+        prefs = {
+            "profile.managed_default_content_settings.images": 2,
             "download.default_directory": os.path.abspath(path_downloads),
             "download.prompt_for_download": False,
             "download.directory_upgrade": True,
-            "safebrowsing.enabled": True
-        })
+            "safebrowsing.enabled": True,
+            "intl.accept_languages": "pt-BR,pt"
+        }
+        self.options.add_experimental_option('prefs', prefs)
         
         # Oculta logs desnecessários
         self.options.add_experimental_option('excludeSwitches', ['enable-logging'])
@@ -155,8 +158,17 @@ class Chrome:
         
         # INJEÇÃO VIA JAVASCRIPT: Mais confiável para campos com máscara e modo Headless
         data_str = self.getDate()
-        print(f"- Injetando datas via JS e disparando eventos: {data_str}")
         
+        # SIMULAÇÃO DE INTERAÇÃO HUMANA: Clica nos campos antes de injetar
+        print(f"- Preparando campos de data e injetando: {data_str}")
+        try:
+            self.navegador.find_element(By.ID, "data_inicial").click()
+            sleep(0.5)
+            self.navegador.find_element(By.ID, "data_final").click()
+            sleep(0.5)
+        except:
+            pass
+
         script_injecao = f"""
             var campos = ['data_inicial', 'data_final'];
             campos.forEach(function(id) {{
@@ -167,6 +179,7 @@ class Chrome:
             }});
         """
         self.navegador.execute_script(script_injecao)
+        sleep(1) # Espera o site processar a injeção
         
         self._click('/html/body/form[5]/div/input')
         
