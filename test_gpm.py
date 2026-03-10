@@ -12,6 +12,11 @@ def test_gpm_single():
     
     browser = BrowserGPM()
     
+    # FORÇAR DATA FIXA PARA TESTE (Solicitado pelo Usuário)
+    # Ao sobrescrever este método, o robô ignorará a planilha e usará esta data.
+    browser.getDate = lambda: "05/03/2026" 
+    print(f"- [MODO TESTE] Data forçada para: {browser.getDate()}")
+    
     # 1. Limpeza inicial
     print("- Limpando ambiente de teste...")
     browser.limpar_pasta_temp()
