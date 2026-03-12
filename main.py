@@ -57,14 +57,12 @@ def main():
 
             da.process_pontomais_files(path_temp)
 
+            # Fazer upload do arquivo consolidado do Pontomais para o Drive
+            print(f"{l}- Fazendo upload do arquivo consolidado do Pontomais para o Drive...")
+            gsheets.upload_para_drive(pontomais_df, "1KGzQdGQOpSi-CDJgmMakVe8zBwf9tzmM")
             
             # Chamar a função para processar os arquivos de consulta turno para BA
-            ##TESTE AQUI
-            print(f"{l}- Tentando baixar arquivo consolidado do Pontomais do Drive...")
-            gsheets.download_do_drive("Pontomais_final.xlsx", "1KGzQdGQOpSi-CDJgmMakVe8zBwf9tzmM", pontomais_df)
-            
             da.process_consulta_turno_files(path_temp, pontomais_df, "BA")
-
             # Chamar a função para processar os arquivos de consulta turno para CE
             da.process_consulta_turno_files(path_temp, pontomais_df, "CE")
 
