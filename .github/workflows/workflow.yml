@@ -5,7 +5,7 @@ on:
 
 jobs:
   run-bot:
-    runs-on: windows-latest # Usa Windows para manter o padrão das suas pastas
+    runs-on: ubuntu-latest # Mudado para Linux (Ubuntu) para maior eficiência em headless
 
     steps:
       - name: 📥 Baixar o código do repositório
@@ -21,6 +21,9 @@ jobs:
 
       - name: 🚀 Executar o Robô
         env:
+          TZ: America/Sao_Paulo
+          LANG: pt_BR.UTF-8
+          LC_ALL: pt_BR.UTF-8
           GITHUB_ACTIONS: "true"
           PYTHONIOENCODING: "utf-8"
           PYTHONUNBUFFERED: "1"

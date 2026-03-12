@@ -129,7 +129,16 @@ def test_gpm_single():
                     el.clear()
                     el.send_keys(value)
                     el.send_keys("\t")
-                    browser.navegador.execute_script("arguments[0].dispatchEvent(new Event('change'));", el)
+                    browser.navegador.execute_script("""
+                        var el = arguments[0];
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        el.dispatchEvent(new Event('blur', { bubbles: true }));
+                    """, el)
+                
+                # DIAGNÓSTICO: Logar o valor real que ficou no campo
+                actual_val = browser.navegador.execute_script("return arguments[0].value;", el)
+                print(f"   -> Valor no campo '{placeholder_part}': '{actual_val}'")
                 return True
             except:
                 return False
@@ -166,7 +175,11 @@ def test_gpm_single():
         print("- Expandindo visualização para 'Todos' os registros...")
         try:
             # Tenta via API do DataTable
-            browser.navegador.execute_script("if($.fn.DataTable.isDataTable('#tab_resultados')) { $('#tab_resultados').DataTable().page.len(-1).draw(); }")
+            browser.navegador.execute_script("""
+                if(window.jQuery && $.fn.DataTable && $.fn.DataTable.isDataTable('#tab_resultados')) { 
+                    $('#tab_resultados').DataTable().page.len(-1).draw(); 
+                }
+            """)
             sleep(4)
         except: pass
         

@@ -231,7 +231,16 @@ class BrowserGPM:
                     el.clear()
                     el.send_keys(value)
                     el.send_keys("\t") 
-                    self.navegador.execute_script("arguments[0].dispatchEvent(new Event('change')); arguments[0].dispatchEvent(new Event('blur'));", el)
+                    self.navegador.execute_script("""
+                        var el = arguments[0];
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        el.dispatchEvent(new Event('blur', { bubbles: true }));
+                    """, el)
+                
+                # DIAGNÓSTICO: Logar o valor real que ficou no campo
+                actual_val = self.navegador.execute_script("return arguments[0].value;", el)
+                print(f"   -> Valor no campo '{placeholder_part}': '{actual_val}'")
                 return True
             except:
                 return False
@@ -279,7 +288,11 @@ class BrowserGPM:
         # Tenta selecionar "Ver Todos" no Datatables para garantir que todos os dados estejam no DOM
         print("- Tentando expandir visualização para 'Todos' os registros...")
         try:
-            self.navegador.execute_script("if($.fn.DataTable.isDataTable('#tab_resultados')) { $('#tab_resultados').DataTable().page.len(-1).draw(); }")
+            self.navegador.execute_script("""
+                if(window.jQuery && $.fn.DataTable && $.fn.DataTable.isDataTable('#tab_resultados')) { 
+                    $('#tab_resultados').DataTable().page.len(-1).draw(); 
+                }
+            """)
             sleep(5)
         except:
             pass
