@@ -4,13 +4,26 @@ from datetime import datetime, timedelta
 from auxiliar import *
 from gsheets import Gsheets
 
-def writeDate(initial_date, final_date):
-    """Função de Simulação: Apenas exibe as datas no log sem alterar o Google Sheets."""
-    print("\n----------------------------------------------------------------------")
-    print(f"- [MODO SIMULAÇÃO] Datas processadas - Inicio: {initial_date} | Fim: {final_date}")
-    print("- Nenhuma alteração foi enviada para a planilha de controle.")
-    print("----------------------------------------------------------------------\n")
-    pass
+def writeDate(initial_date, final_date_unused):
+    """Atualiza a data na planilha de controle do Google Sheets para o próximo dia."""
+    try:
+        gsheets = Gsheets()
+        print(f"- Atualizando planilha de controle via API ({celula_data_controle})...")
+        planilha = gsheets.cliente_sheets.open_by_key(id_planilha_controle)
+        aba = planilha.worksheet(nome_aba_controle)
+        
+        # Converte a data atual para objeto para somar 1 dia
+        data_atual = datetime.strptime(initial_date, "%d/%m/%Y")
+        proxima_data = data_atual + timedelta(days=1)
+        proxima_data_str = proxima_data.strftime("%d/%m/%Y")
+        
+        # Atualiza a célula correspondente
+        aba.update_acell(celula_data_controle, proxima_data_str)
+        print(f" Data de controle avançada para: {proxima_data_str}")
+        return True
+    except Exception as e:
+        print(f"# Erro ao atualizar a data na planilha: {e}")
+        return False
 
 def _buscar_data_planilha():
     try:
@@ -21,15 +34,8 @@ def _buscar_data_planilha():
         valor_celula = aba.acell(celula_data_controle).value
         
         if valor_celula:
-            # valor_celula vem como "06/03/2026 04:06"
-            # Extraímos apenas a data ("06/03/2026")
             data_str = valor_celula.split(" ")[0]
-            # Convertermos para datetime para garantir que o formato está válido
             data_objeto = datetime.strptime(data_str, "%d/%m/%Y")
-            
-            # --- MODIFICAÇÃO DE TESTE LOCAL ---
-            data_objeto = data_objeto - timedelta(days=1)
-            print(f"- [MODO TESTE LOCAL] Subtraindo 1 dia para validação: {data_objeto.strftime('%d/%m/%Y')}")
             
             return data_objeto
         else:
