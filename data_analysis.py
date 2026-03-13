@@ -188,7 +188,10 @@ def process_consulta_turno_files(path_temp, pontomais_df, operacao):
 
             # Função para extrair o primeiro nome da coluna 'parceiros'
             def extrair_primeiro_nome(parceiros):
-                return parceiros.split(' - ')[0] if isinstance(parceiros, str) else None
+                if isinstance(parceiros, str):
+                    # Pega o primeiro nome e limpa espaços/converte para maiúsculo
+                    return parceiros.split(' - ')[0].strip().upper()
+                return None
             
             # Aplicar a função para extrair o primeiro nome em cada linha da coluna 'parceiros'
             consulta_turno_df['primeiro_nome'] = consulta_turno_df['parceiros'].apply(extrair_primeiro_nome)
@@ -196,19 +199,22 @@ def process_consulta_turno_files(path_temp, pontomais_df, operacao):
             # Encontrar o menor horário de ponto batido por um membro da equipe
             df_parceiros = loc_menor_entrada_pontomais()
             
+            # Garantir que as colunas de junção estejam no mesmo formato (upper/strip)
+            df_parceiros['parceiro_1_search'] = df_parceiros['parceiro_1'].astype(str).str.strip().str.upper()
+            
             # Juntar DataFrames
             consulta_turno_df = consulta_turno_df.merge(
-                df_parceiros[['parceiro_1', 'menor_tempo']],
+                df_parceiros[['parceiro_1_search', 'menor_tempo']],
                 how='left',
                 left_on='primeiro_nome',
-                right_on='parceiro_1'
+                right_on='parceiro_1_search'
             )
             
             # Renomear a coluna 'menor_tempo' para 'hora_pontomais'
             consulta_turno_df.rename(columns={'menor_tempo': 'hora_pontomais'}, inplace=True)
             
-            # Remover a coluna 'parceiro_1'
-            consulta_turno_df.drop(columns=['parceiro_1'], inplace=True)
+            # Remover a coluna auxiliar
+            consulta_turno_df.drop(columns=['parceiro_1_search'], inplace=True)
 
             # Criar a coluna 'date_hour_pontomais' que é a concatenação das colunas 'Data' e 'hora_pontomais'
             consulta_turno_df['date_hour_pontomais'] = consulta_turno_df['data'].astype(str) + ' ' + consulta_turno_df['hora_pontomais'].astype(str)
@@ -247,26 +253,42 @@ def find_hour_km_run(vehicle_records, plate, initial_mileage, initial_hour):
     return None
 
 def process_vehicle_logs_by_operation(path_temp, operacao, notifications_file):
+    # Carrega as notificações UMA VEZ para otimizar
+    notifications_data = []
+    try:
+        if os.path.exists(notifications_file):
+            with open(notifications_file, 'r', encoding='utf-8') as json_file:
+                notifications_data = json.load(json_file)
+        else:
+            print(f"# Aviso: Arquivo de notificações não encontrado: {notifications_file}")
+    except Exception as e:
+        print(f"# Erro ao carregar arquivo de notificações ({notifications_file}): {e}")
+
     # Função para encontrar a data do evento correspondente à placa no arquivo de notificações
     def find_event_date(plate):
-        with open(notifications_file, 'r', encoding='utf-8') as json_file:
-            notifications_data = json.load(json_file)
+        if not isinstance(plate, str): return None
+        plate_search = plate.strip().upper().replace("-", "").replace(" ", "")
         
         for notification in notifications_data:
             vehicle = notification.get('vehicle', {})
-            if vehicle.get('licensePlate') == plate:
-                event_date = notification.get('eventDate')
-                if event_date:
-                    try:
-                        # Remove milissegundos se houver (corta tudo depois do ponto)
-                        if "." in event_date:
-                            event_date = event_date.split(".")[0]
+            plate_notification = vehicle.get('licensePlate')
+            
+            if plate_notification:
+                plate_notification = plate_notification.strip().upper().replace("-", "").replace(" ", "")
+                
+                if plate_notification == plate_search:
+                    event_date = notification.get('eventDate')
+                    if event_date:
+                        try:
+                            # Remove milissegundos se houver (corta tudo depois do ponto)
+                            if "." in event_date:
+                                event_date = event_date.split(".")[0]
 
-                        # Converter a data para o formato dd/mm/yyyy hh:mm
-                        event_date = datetime.strptime(event_date, "%Y-%m-%dT%H:%M:%S")
-                        return event_date.strftime("%d/%m/%Y %H:%M")
-                    except ValueError:
-                        print(f"Erro ao converter a data para a placa {plate}. Data original: {event_date}")
+                            # Converter a data para o formato dd/mm/yyyy hh:mm
+                            dt_obj = datetime.strptime(event_date, "%Y-%m-%dT%H:%M:%S")
+                            return dt_obj.strftime("%d/%m/%Y %H:%M")
+                        except ValueError:
+                            print(f"# Erro ao converter data '{event_date}' para placa {plate}")
         return None
 
     # Ler o arquivo "consulta turno" correspondente à operação
@@ -333,7 +355,9 @@ def loc_menor_entrada_pontomais():
     # Função para encontrar a primeira entrada correspondente ao primeiro nome na coluna 'Nome' do arquivo "Pontomais_final.xlsx"
     def encontrar_primeira_entrada(nome):
         if isinstance(nome, str):
-            match = df_pontomais_final[df_pontomais_final['Nome'] == nome]['1ª Entrada']
+            nome_search = nome.strip().upper()
+            # Filtra o dataframe usando comparação robusta
+            match = df_pontomais_final[df_pontomais_final['Nome'].str.strip().str.upper() == nome_search]['1ª Entrada']
             return match.iloc[0] if not match.empty else None
         return None
 
