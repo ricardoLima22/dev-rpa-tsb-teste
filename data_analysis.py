@@ -197,24 +197,17 @@ def process_consulta_turno_files(path_temp, pontomais_df, operacao):
             consulta_turno_df['primeiro_nome'] = consulta_turno_df['parceiros'].apply(extrair_primeiro_nome)
             
             # Encontrar o menor horário de ponto batido por um membro da equipe
-            df_parceiros = loc_menor_entrada_pontomais()
+            df_parceiros_resumo = loc_menor_entrada_pontomais()
             
-            # Garantir que as colunas de junção estejam no mesmo formato (upper/strip)
-            df_parceiros['parceiro_1_search'] = df_parceiros['parceiro_1'].astype(str).str.strip().str.upper()
-            
-            # Juntar DataFrames
+            # Juntar DataFrames pelo ID do turno (Garante 100% de precisão mesmo com nomes diferentes)
             consulta_turno_df = consulta_turno_df.merge(
-                df_parceiros[['parceiro_1_search', 'menor_tempo']],
-                how='left',
-                left_on='primeiro_nome',
-                right_on='parceiro_1_search'
+                df_parceiros_resumo[['id', 'menor_tempo']],
+                on='id',
+                how='left'
             )
             
             # Renomear a coluna 'menor_tempo' para 'hora_pontomais'
             consulta_turno_df.rename(columns={'menor_tempo': 'hora_pontomais'}, inplace=True)
-            
-            # Remover a coluna auxiliar
-            consulta_turno_df.drop(columns=['parceiro_1_search'], inplace=True)
 
             # Criar a coluna 'date_hour_pontomais' que é a concatenação das colunas 'Data' e 'hora_pontomais'
             consulta_turno_df['date_hour_pontomais'] = consulta_turno_df['data'].astype(str) + ' ' + consulta_turno_df['hora_pontomais'].astype(str)
@@ -347,7 +340,7 @@ def criar_dataframe(diretorio, comeca_com, termina_com):
             print(f"# Erro ao processar o arquivo {arquivo}: {e}")
             
     df = pd.concat(base_dados, ignore_index=True)
-    df = pd.DataFrame(df)
+    df = df.drop_duplicates().reset_index(drop=True)
     return df
     
 def loc_menor_entrada_pontomais():
@@ -372,11 +365,15 @@ def loc_menor_entrada_pontomais():
     if '1ª Entrada' not in df_consulta_turno.columns:
         df_consulta_turno['1ª Entrada'] = None
 
-    df_parceiros = df_consulta_turno['parceiros']
-    df_parceiros = df_consulta_turno.reindex(columns=['parceiros'])
-
-    df_parceiros = df_parceiros['parceiros'].str.split(' - ', expand=True)
-    df_parceiros.columns = [f'parceiro_{i+1}' for i in range(df_parceiros.shape[1])]
+    # Mantém o ID para o cruzamento futuro
+    df_parceiros_base = df_consulta_turno[['id', 'parceiros']].copy()
+    
+    # Divide a coluna parceiros em várias colunas
+    parceiros_split = df_parceiros_base['parceiros'].str.split(' - ', expand=True)
+    
+    # Criar DataFrame final com ID e nomes dos parceiros
+    df_parceiros = pd.concat([df_parceiros_base[['id']], parceiros_split], axis=1)
+    df_parceiros.columns = ['id'] + [f'parceiro_{i+1}' for i in range(parceiros_split.shape[1])]
         
 
     for col in df_parceiros.columns:
